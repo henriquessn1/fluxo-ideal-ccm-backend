@@ -1,16 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
-from .service import ServiceStatus
 
 
 class ClientBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    dns: str = Field(..., min_length=1, max_length=255)
-    api_key: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    is_active: bool = True
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=50)
+    timezone: str = Field("America/Sao_Paulo", max_length=50)
 
 
 class ClientCreate(ClientBase):
@@ -19,14 +17,15 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
-    dns: Optional[str] = Field(None, min_length=1, max_length=255)
-    api_key: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=50)
+    timezone: Optional[str] = Field(None, max_length=50)
     is_active: Optional[bool] = None
 
 
 class ClientResponse(ClientBase):
     id: UUID
+    is_active: bool
     created_at: datetime
     updated_at: datetime
     
@@ -34,6 +33,5 @@ class ClientResponse(ClientBase):
         from_attributes = True
 
 
-class ClientWithStatus(ClientResponse):
-    services: List[ServiceStatus] = []
-    overall_status: str = "UNKNOWN"  # UP, DOWN, DEGRADED, UNKNOWN
+class ClientWithInstances(ClientResponse):
+    instances: List[dict] = []

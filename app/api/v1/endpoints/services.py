@@ -1,3 +1,18 @@
+"""
+DEPRECATED: This endpoint is deprecated and will be removed in future versions.
+
+Use the new modular architecture instead:
+- /clients - Manage clients
+- /instances - Manage client instances  
+- /modules - Manage monitoring modules
+- /installations - Manage module installations on instances
+- /endpoints - Manage endpoint definitions
+- /thresholds - Manage monitoring thresholds
+- /monitoring-logs - Access monitoring data
+
+The Service model has been replaced by the new Instance + Installation + Module structure.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -7,7 +22,7 @@ from app.core.database import get_async_db
 from app.models import Service, Client
 from app.schemas import ServiceCreate, ServiceUpdate, ServiceResponse
 
-router = APIRouter()
+router = APIRouter(deprecated=True)
 
 
 @router.post("/", response_model=ServiceResponse, status_code=status.HTTP_201_CREATED)

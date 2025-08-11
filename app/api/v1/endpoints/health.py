@@ -5,7 +5,7 @@ from typing import Dict, Any
 from datetime import datetime, timedelta
 
 from app.core.database import get_async_db
-from app.models import Client, Service, HealthCheck
+from app.models import Client, Instance, Module, Installation, Endpoint, MonitoringLog
 
 router = APIRouter()
 
@@ -15,12 +15,13 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "service": "monitoring-api"
+        "service": "monitoring-api-v2",
+        "version": "2.0.0"
     }
 
 
 @router.get("/stats", response_model=Dict[str, Any])
-async def health_stats(
+async def system_stats(
     db: AsyncSession = Depends(get_async_db)
 ):
     # Count total clients
@@ -35,40 +36,82 @@ async def health_stats(
     )
     active_clients = active_clients_result.scalar()
     
-    # Count total services
-    services_result = await db.execute(
-        select(func.count(Service.id))
+    # Count total instances
+    instances_result = await db.execute(
+        select(func.count(Instance.id))
     )
-    total_services = services_result.scalar()
+    total_instances = instances_result.scalar()
     
-    # Count active services
-    active_services_result = await db.execute(
-        select(func.count(Service.id)).where(Service.is_active == True)
+    # Count active instances
+    active_instances_result = await db.execute(
+        select(func.count(Instance.id)).where(Instance.is_active == True)
     )
-    active_services = active_services_result.scalar()
+    active_instances = active_instances_result.scalar()
     
-    # Get recent health checks stats (last hour)
+    # Count total modules
+    modules_result = await db.execute(
+        select(func.count(Module.id))
+    )
+    total_modules = modules_result.scalar()
+    
+    # Count public modules
+    public_modules_result = await db.execute(
+        select(func.count(Module.id)).where(Module.is_public == True)
+    )
+    public_modules = public_modules_result.scalar()
+    
+    # Count total installations
+    installations_result = await db.execute(
+        select(func.count(Installation.id))
+    )
+    total_installations = installations_result.scalar()
+    
+    # Count active installations
+    active_installations_result = await db.execute(
+        select(func.count(Installation.id)).where(Installation.is_active == True)
+    )
+    active_installations = active_installations_result.scalar()
+    
+    # Count total endpoints
+    endpoints_result = await db.execute(
+        select(func.count(Endpoint.id))
+    )
+    total_endpoints = endpoints_result.scalar()
+    
+    # Get recent monitoring logs stats (last hour)
     one_hour_ago = datetime.utcnow() - timedelta(hours=1)
-    recent_checks_result = await db.execute(
+    recent_logs_result = await db.execute(
         select(
-            HealthCheck.status,
-            func.count(HealthCheck.id).label('count')
+            MonitoringLog.alert_level,
+            func.count(MonitoringLog.id).label('count')
         )
-        .where(HealthCheck.checked_at >= one_hour_ago)
-        .group_by(HealthCheck.status)
+        .where(MonitoringLog.created_at >= one_hour_ago)
+        .group_by(MonitoringLog.alert_level)
     )
-    recent_checks = {row.status: row.count for row in recent_checks_result}
+    recent_logs = {(row.alert_level or 'unknown'): row.count for row in recent_logs_result}
     
     return {
         "timestamp": datetime.utcnow().isoformat(),
+        "system_version": "2.0.0",
         "clients": {
             "total": total_clients,
             "active": active_clients
         },
-        "services": {
-            "total": total_services,
-            "active": active_services
+        "instances": {
+            "total": total_instances,
+            "active": active_instances
         },
-        "recent_health_checks": recent_checks,
+        "modules": {
+            "total": total_modules,
+            "public": public_modules
+        },
+        "installations": {
+            "total": total_installations,
+            "active": active_installations
+        },
+        "endpoints": {
+            "total": total_endpoints
+        },
+        "recent_monitoring_logs": recent_logs,
         "period": "last_hour"
     }

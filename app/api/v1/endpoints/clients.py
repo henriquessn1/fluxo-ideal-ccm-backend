@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from typing import List
-from datetime import datetime, timedelta
+from uuid import UUID
 
 from app.core.database import get_async_db
-from app.models import Client, Service, HealthCheck
-from app.schemas import ClientCreate, ClientUpdate, ClientResponse, ClientWithStatus, ServiceStatus
+from app.models import Client
+from app.schemas import ClientCreate, ClientUpdate, ClientResponse, ClientWithInstances
 
 router = APIRouter()
 
@@ -53,7 +53,7 @@ async def list_clients(
 
 @router.get("/{client_id}", response_model=ClientResponse)
 async def get_client(
-    client_id: int,
+    client_id: UUID,
     db: AsyncSession = Depends(get_async_db)
 ):
     result = await db.execute(
@@ -72,7 +72,7 @@ async def get_client(
 
 @router.put("/{client_id}", response_model=ClientResponse)
 async def update_client(
-    client_id: int,
+    client_id: UUID,
     client_data: ClientUpdate,
     db: AsyncSession = Depends(get_async_db)
 ):
@@ -108,7 +108,7 @@ async def update_client(
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_client(
-    client_id: int,
+    client_id: UUID,
     db: AsyncSession = Depends(get_async_db)
 ):
     result = await db.execute(
@@ -122,16 +122,19 @@ async def delete_client(
             detail=f"Client with id {client_id} not found"
         )
     
-    await db.delete(client)
+    # Soft delete
+    client.is_active = False
     await db.commit()
 
 
-@router.get("/{client_id}/status", response_model=ClientWithStatus)
-async def get_client_status(
-    client_id: int,
+@router.get("/{client_id}/instances", response_model=ClientWithInstances)
+async def get_client_with_instances(
+    client_id: UUID,
     db: AsyncSession = Depends(get_async_db)
 ):
-    # Get client with services
+    from app.models import Instance
+    
+    # Get client
     result = await db.execute(
         select(Client).where(Client.id == client_id)
     )
@@ -143,48 +146,27 @@ async def get_client_status(
             detail=f"Client with id {client_id} not found"
         )
     
-    # Get all services for this client
-    services_result = await db.execute(
-        select(Service).where(Service.client_id == client_id)
+    # Get all instances for this client
+    instances_result = await db.execute(
+        select(Instance).where(Instance.client_id == client_id)
     )
-    services = services_result.scalars().all()
+    instances = instances_result.scalars().all()
     
-    # Get latest health check for each service
-    service_statuses = []
-    overall_status = "UP"
+    instances_data = [
+        {
+            "id": str(instance.id),
+            "name": instance.name,
+            "host": instance.host,
+            "environment": instance.environment,
+            "version": instance.version,
+            "is_active": instance.is_active,
+            "created_at": instance.created_at.isoformat(),
+            "updated_at": instance.updated_at.isoformat()
+        }
+        for instance in instances
+    ]
     
-    for service in services:
-        # Get the most recent health check for this service
-        health_check_result = await db.execute(
-            select(HealthCheck)
-            .where(HealthCheck.service_id == service.id)
-            .order_by(HealthCheck.checked_at.desc())
-            .limit(1)
-        )
-        latest_check = health_check_result.scalar_one_or_none()
-        
-        service_status = ServiceStatus(
-            **service.__dict__,
-            status="UNKNOWN" if not latest_check else latest_check.status,
-            last_check=latest_check.checked_at if latest_check else None,
-            response_time=latest_check.response_time if latest_check else None,
-            error_message=latest_check.error_message if latest_check else None
-        )
-        service_statuses.append(service_status)
-        
-        # Update overall status
-        if latest_check:
-            if latest_check.status == "DOWN":
-                overall_status = "DOWN"
-            elif latest_check.status == "DEGRADED" and overall_status != "DOWN":
-                overall_status = "DEGRADED"
-    
-    # If no services or no health checks, status is UNKNOWN
-    if not services or all(s.status == "UNKNOWN" for s in service_statuses):
-        overall_status = "UNKNOWN"
-    
-    return ClientWithStatus(
+    return ClientWithInstances(
         **client.__dict__,
-        services=service_statuses,
-        overall_status=overall_status
+        instances=instances_data
     )
