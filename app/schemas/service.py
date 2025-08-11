@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
+from uuid import UUID
 
 
 class ServiceBase(BaseModel):
@@ -15,7 +16,7 @@ class ServiceBase(BaseModel):
 
 
 class ServiceCreate(ServiceBase):
-    client_id: int
+    client_id: UUID
 
 
 class ServiceUpdate(BaseModel):
@@ -30,8 +31,8 @@ class ServiceUpdate(BaseModel):
 
 
 class ServiceResponse(ServiceBase):
-    id: int
-    client_id: int
+    id: UUID
+    client_id: UUID
     created_at: datetime
     updated_at: datetime
     

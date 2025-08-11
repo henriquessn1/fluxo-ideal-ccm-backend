@@ -1,18 +1,16 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text
+from sqlalchemy import Column, String, Boolean
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import BaseModel, SoftDeleteMixin
 
 
-class Client(Base, TimestampMixin):
+class Client(BaseModel, SoftDeleteMixin):
     __tablename__ = "clients"
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, unique=True)
-    dns = Column(String(255), nullable=False)
-    api_key = Column(String(255), nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    description = Column(Text, nullable=True)
+    # Basic information
+    name = Column(String(255), nullable=False, unique=True, index=True)
+    email = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
+    timezone = Column(String(50), default="America/Sao_Paulo", nullable=False)
     
     # Relationships
-    services = relationship("Service", back_populates="client", cascade="all, delete-orphan")
-    health_checks = relationship("HealthCheck", back_populates="client", cascade="all, delete-orphan")
+    instances = relationship("Instance", back_populates="client", cascade="all, delete-orphan")

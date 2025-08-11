@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class HealthCheckResponse(BaseModel):
-    id: int
-    client_id: int
-    service_id: Optional[int]
+    id: UUID
+    client_id: UUID
+    service_id: Optional[UUID]
     status: str
     response_time: Optional[float]
     status_code: Optional[int]
