@@ -61,3 +61,4 @@
 4. Manter backup do banco antes de grandes mudanças
 5. Testar migrações em ambiente de desenvolvimento primeiro
 6. Sempre que for criar um id de tabela, de preferencia ao tipo UUID
+7. Não usar emoticons em logs e arquivos de sistema

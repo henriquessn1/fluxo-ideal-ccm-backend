@@ -8,7 +8,7 @@ from .monitoring_log import MonitoringLogCreate, MonitoringLogResponse, Monitori
 
 # Legacy schemas (will be removed/updated)
 from .service import ServiceCreate, ServiceUpdate, ServiceResponse
-from .health_check import HealthCheckResponse, ServiceStatus
+from .health_check import HealthCheckResponse
 
 __all__ = [
     # New schemas
@@ -40,6 +40,5 @@ __all__ = [
     "ServiceCreate",
     "ServiceUpdate",
     "ServiceResponse",
-    "HealthCheckResponse",
-    "ServiceStatus"
+    "HealthCheckResponse"
 ]

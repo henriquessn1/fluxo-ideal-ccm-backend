@@ -5,6 +5,7 @@ from uuid import UUID
 
 
 class InstallationBase(BaseModel):
+    api_key: str = Field(..., description="API key for authentication")
     config: Optional[Dict[str, Any]] = None
 
 
@@ -14,6 +15,7 @@ class InstallationCreate(InstallationBase):
 
 
 class InstallationUpdate(BaseModel):
+    api_key: Optional[str] = Field(None, description="API key for authentication")
     config: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 

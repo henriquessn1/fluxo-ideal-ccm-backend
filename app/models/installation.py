@@ -2,7 +2,6 @@ from sqlalchemy import Column, Boolean, ForeignKey, JSON, UniqueConstraint, Stri
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from .base import BaseModel, SoftDeleteMixin
-import secrets
 
 
 class Installation(BaseModel, SoftDeleteMixin):
@@ -13,7 +12,7 @@ class Installation(BaseModel, SoftDeleteMixin):
     instance_id = Column(UUID(as_uuid=True), ForeignKey("instances.id", ondelete="CASCADE"), nullable=False, index=True)
     
     # Authentication
-    api_key = Column(String(255), nullable=False, unique=True, index=True, default=lambda: f"inst_{secrets.token_urlsafe(32)}")
+    api_key = Column(String(255), nullable=False, index=True)
     
     # Configuration
     config = Column(JSON, nullable=True)  # Configuration specific to this installation

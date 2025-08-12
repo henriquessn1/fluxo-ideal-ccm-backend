@@ -16,6 +16,9 @@ class Instance(BaseModel, SoftDeleteMixin):
     environment = Column(String(50), nullable=True)  # production, staging, development
     version = Column(String(50), nullable=True)
     
+    # Authentication
+    admin_api_key = Column(String(255), nullable=True, unique=True, index=True)
+    
     # Relationships
     client = relationship("Client", back_populates="instances")
     installations = relationship("Installation", back_populates="instance", cascade="all, delete-orphan")
